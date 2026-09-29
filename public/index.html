@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Ticket Tracker</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #999999;
+            --border-color: #2a2a2a;
+            --accent: #ffffff;
+            --radius: 8px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 40px 20px;
+            max-width: 1100px;
+            margin: auto;
+            line-height: 1.5;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }
+
+        h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-main);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 16px;
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        input[type="text"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background: #252525;
+            color: #ffffff;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #777;
+        }
+
+        button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            width: 100%;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .secondary-btn {
+            background: #2a2a2a;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            width: auto;
+        }
+
+        .secondary-btn:hover {
+            background: #333333;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: 1fr 150px 150px auto;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .history-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .history-toggle input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        .ticket-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ticket-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-radius: 4px;
+            background: #2a2a2a;
+            color: #ccc;
+        }
+
+        .badge-high {
+            background: #3d1515;
+            color: #ff8a8a;
+        }
+
+        .badge-medium {
+            background: #3d3112;
+            color: #ffd27c;
+        }
+
+        .badge-low {
+            background: #133318;
+            color: #8ae99c;
+        }
+
+        .ticket-actions {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .ticket-actions button {
+            padding: 8px 12px;
+            font-size: 12px;
+            flex: 1;
+            min-width: 90px;
+        }
+
+        .meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 850px) {
+            body {
+                padding: 20px 12px;
+            }
+
+            .filters {
+                grid-template-columns: 1fr;
+            }
+
+            .ticket-actions {
+                flex-direction: column;
+            }
+
+            .ticket-actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Support Ticket Tracker</h1>
+
+    <!-- Create Ticket Form -->
+    <div class="card">
+        <h2>Create New Ticket</h2>
+        <form id="createForm">
+            <div class="form-group">
+                <input type="text" id="title" placeholder="Issue title (Required)" required>
+            </div>
+            <div class="form-group">
+                <input type="text" id="description" placeholder="Optional description...">
+            </div>
+            <div class="form-group">
+                <select id="priority">
+                    <option value="low">Low Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="high">High Priority</option>
+                </select>
+            </div>
+            <button type="submit">Submit Ticket</button>
+        </form>
+    </div>
+
+    <!-- Search & Dynamic Filters -->
+    <div class="filters">
+        <input type="text" id="searchInput" placeholder="Search tickets by title..." oninput="fetchTickets()">
+        <select id="statusFilter" onchange="fetchTickets()">
+            <option value="">All Statuses</option>
+            <option value="Open">Open</option>
+            <option value="In progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+        </select>
+        <select id="timeFilter" onchange="fetchTickets()">
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="7days">Last 7 Days</option>
+            <option value="30days">Last 30 Days</option>
+        </select>
+        <label class="history-toggle">
+            <input type="checkbox" id="showHistory" onchange="fetchTickets()"> History (Resolved Only)
+        </label>
+    </div>
+
+    <!-- Ticket List -->
+    <div id="ticketList"></div>
+
+    <script>
+        const API_URL = 'http://localhost:3001';
+
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                priority: document.getElementById('priority').value,
+            };
+
+            const res = await fetch(`${API_URL}/tickets`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                document.getElementById('createForm').reset();
+                fetchTickets();
+            }
+        });
+
+        async function fetchTickets() {
+            const search = document.getElementById('searchInput').value;
+            const status = document.getElementById('statusFilter').value;
+            const timeRange = document.getElementById('timeFilter').value;
+            const showHistory = document.getElementById('showHistory').checked;
+
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (status) params.append('status', status);
+
+            const res = await fetch(`${API_URL}/tickets?${params.toString()}`);
+            let tickets = await res.json();
+
+            if (showHistory) {
+                tickets = tickets.filter(t => t.status === 'Resolved');
+            } else if (!status) {
+                tickets = tickets.filter(t => t.status !== 'Resolved');
+            }
+
+            const now = new Date();
+            if (timeRange !== 'all') {
+                tickets = tickets.filter(t => {
+                    const ticketDate = new Date(t.createdAt);
+                    const diffTime = now - ticketDate;
+                    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+                    if (timeRange === 'today') return diffDays <= 1 && ticketDate.getDate() === now.getDate();
+                    if (timeRange === '7days') return diffDays <= 7;
+                    if (timeRange === '30days') return diffDays <= 30;
+                    return true;
+                });
+            }
+
+            const list = document.getElementById('ticketList');
+
+            if (tickets.length === 0) {
+                list.innerHTML = `<div class="card" style="text-align: center; color: var(--text-muted);">No tickets match the current view.</div>`;
+                return;
+            }
+
+            list.innerHTML = tickets.map(t => {
+                const displayStatus = t.status === 'In_progress' ? 'In progress' : t.status;
+                const formattedDate = new Date(t.createdAt).toLocaleString(undefined, {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                });
+
+                return `
+                    <div class="card">
+                        <div class="ticket-item">
+                            <div class="ticket-header">
+                                <strong style="font-size: 15px; flex-grow: 1; color: #fff;">${escapeHtml(t.title)}</strong>
+                                <div class="badges">
+                                    <span class="badge badge-${t.priority}">${t.priority}</span>
+                                    <span class="badge">${displayStatus}</span>
+                                </div>
+                            </div>
+                            ${t.description ? `<div class="meta">${escapeHtml(t.description)}</div>` : ''}
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                <span class="meta" style="font-family: monospace; font-size: 11px;">ID: ${t.id}</span>
+                                <span class="meta" style="font-size: 11px;">Created: ${formattedDate}</span>
+                            </div>
+                        </div>
+                        <div class="ticket-actions">
+                            <button class="secondary-btn" onclick="updateStatus('${t.id}', 'Open')">Open</button>
+                            <button class="secondary-btn" onclick="updateStatus('${t.id}', 'In progress')">In Progress</button>
+                            <button class="secondary-btn" onclick="updateStatus('${t.id}', 'Resolved')">Resolved</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function updateStatus(id, status) {
+            await fetch(`${API_URL}/tickets/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            fetchTickets();
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        fetchTickets();
+
+        setInterval(() => {
+            fetchTickets();
+        }, 10000);
+    </script>
+</body>
+
+</html>
